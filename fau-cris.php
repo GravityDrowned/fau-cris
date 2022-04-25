@@ -34,7 +34,8 @@ add_action('plugins_loaded', array('FAU_CRIS', 'instance'));
 register_activation_hook(__FILE__, array('FAU_CRIS', 'activate'));
 register_deactivation_hook(__FILE__, array('FAU_CRIS', 'deactivate'));
 
-class FAU_CRIS {
+class FAU_CRIS
+{
     /**
      * Get Started
      */
@@ -50,7 +51,8 @@ class FAU_CRIS {
     protected static $instance = null;
     private static $cris_option_page = null;
 
-    public static function instance() {
+    public static function instance()
+    {
 
         if (null == self::$instance) {
             self::$instance = new self;
@@ -59,7 +61,8 @@ class FAU_CRIS {
         return self::$instance;
     }
 
-    private function __construct() {
+    private function __construct()
+    {
         load_plugin_textdomain('fau-cris', false, dirname(plugin_basename(__FILE__)) . '/languages');
 
         add_action('admin_init', array(__CLASS__, 'admin_init'));
@@ -71,23 +74,26 @@ class FAU_CRIS {
         add_shortcode('cris', array(__CLASS__, 'cris_shortcode'));
         add_shortcode('cris-custom', array(__CLASS__, 'cris_custom_shortcode'));
 
-        add_action('update_option_' . self::option_name, array(__CLASS__, 'cris_cron'), 10, 2 );
+        add_action('update_option_' . self::option_name, array(__CLASS__, 'cris_cron'), 10, 2);
         add_action('cris_auto_update', array(__CLASS__, 'cris_auto_sync'));
     }
 
     /**
      * Check PHP and WP Version
      */
-    public static function activate() {
+    public static function activate()
+    {
         self::version_compare();
         update_option(self::version_option_name, self::version);
     }
 
-    public static function deactivate() {
+    public static function deactivate()
+    {
         wp_clear_scheduled_hook('cris_auto_update');
     }
 
-    private static function version_compare() {
+    private static function version_compare()
+    {
         $error = '';
 
         if (version_compare(PHP_VERSION, self::php_version, '<')) {
@@ -101,15 +107,16 @@ class FAU_CRIS {
         if (!empty($error)) {
             deactivate_plugins(plugin_basename(__FILE__), false, true);
             wp_die(
-                    $error, __('Fehler bei der Aktivierung des Plugins', 'fau-cris'), array(
-                'response' => 500,
-                'back_link' => TRUE
-                    )
+                $error, __('Fehler bei der Aktivierung des Plugins', 'fau-cris'), array(
+                    'response' => 500,
+                    'back_link' => TRUE
+                )
             );
         }
     }
 
-    public static function update_version() {
+    public static function update_version()
+    {
         if (get_option(self::version_option_name, null) != self::version)
             update_option(self::version_option_name, self::version);
     }
@@ -117,7 +124,8 @@ class FAU_CRIS {
     /**
      * Display settings link on the plugins page (beside the activate/deactivate links)
      */
-    public static function add_action_links($links) {
+    public static function add_action_links($links)
+    {
         $mylinks = array(
             '<a href="' . admin_url('options-general.php?page=options-fau-cris') . '">' . __('Einstellungen', 'fau-cris') . '</a>',
         );
@@ -127,9 +135,10 @@ class FAU_CRIS {
     /**
      * Get Options
      */
-    public static function get_options() {
+    public static function get_options()
+    {
         $defaults = self::default_options();
-        $options = (array) get_option(self::option_name);
+        $options = (array)get_option(self::option_name);
         $options = wp_parse_args($options, $defaults);
         $options = array_intersect_key($options, $defaults);
         return $options;
@@ -138,7 +147,8 @@ class FAU_CRIS {
     /**
      * Set default options
      */
-    private static function default_options() {
+    private static function default_options()
+    {
         require_once("class_Tools.php");
         $options = array(
             'cris_org_nr' => '',
@@ -157,9 +167,9 @@ class FAU_CRIS {
             'cris_project_link' => 'none',
             'cris_patent_order' => Tools::getOptionsOrder('patents'),
             'cris_patent_link' => 'none',
-            'cris_activities_order' =>  Tools::getOptionsOrder('activities'),
+            'cris_activities_order' => Tools::getOptionsOrder('activities'),
             'cris_activities_link' => 'none',
-            'cris_standardizations_order' =>  Tools::getOptionsOrder('standardizations'),
+            'cris_standardizations_order' => Tools::getOptionsOrder('standardizations'),
             'cris_sync_check' => 0,
             'cris_sync_research_custom' => 0,
             'cris_sync_field_custom' => 0,
@@ -177,9 +187,10 @@ class FAU_CRIS {
     /**
      * Add options page
      */
-    public static function add_options_page() {
+    public static function add_options_page()
+    {
         self::$cris_option_page = add_options_page(
-                'CRIS: Einstellungen', 'CRIS', 'manage_options', 'options-fau-cris', array(__CLASS__, 'options_fau_cris')
+            'CRIS: Einstellungen', 'CRIS', 'manage_options', 'options-fau-cris', array(__CLASS__, 'options_fau_cris')
         );
         add_action('load-' . self::$cris_option_page, array(__CLASS__, 'cris_help_menu'));
     }
@@ -187,7 +198,8 @@ class FAU_CRIS {
     /*
      * Options page tabs
      */
-    private static function options_page_tabs() {
+    private static function options_page_tabs()
+    {
         $tabs = array(
             'general' => __('Allgemein', 'fau-cris'),
             'layout' => __('Darstellung', 'fau-cris'),
@@ -195,7 +207,9 @@ class FAU_CRIS {
         );
         return $tabs;
     }
-    private static function current_tab($tab) {
+
+    private static function current_tab($tab)
+    {
         $tabs = self::options_page_tabs();
         if (isset($tab['tab'])) {
             $current = $tab['tab'];
@@ -209,7 +223,8 @@ class FAU_CRIS {
     /**
      * Options page callback
      */
-    public static function options_fau_cris() {
+    public static function options_fau_cris()
+    {
         $tabs = self::options_page_tabs();
         $current = self::current_tab($_GET);
         if (isset($_GET['action']) && $_GET['action'] == 'cris_sync') {
@@ -225,8 +240,8 @@ class FAU_CRIS {
         <div class="wrap">
             <h2><?php _e('Einstellungen', 'fau-cris'); ?> &rsaquo; CRIS</h2>
             <h2 class="nav-tab-wrapper">
-                <?php foreach( $tabs as $tab => $name ){
-                    $class = ( $tab == $current ) ? ' nav-tab-active' : '';
+                <?php foreach ($tabs as $tab => $name) {
+                    $class = ($tab == $current) ? ' nav-tab-active' : '';
                     echo "<a class='nav-tab$class' href='?page=options-fau-cris&tab=$tab'>$name</a>";
                 } ?>
             </h2>
@@ -238,7 +253,7 @@ class FAU_CRIS {
                 settings_fields('fau_cris_options');
                 do_settings_sections('fau_cris_options');
                 if (isset($current) && $current == 'sync'
-                        && (isset($options['cris_sync_check']) && $options['cris_sync_check'] == 1)) {
+                    && (isset($options['cris_sync_check']) && $options['cris_sync_check'] == 1)) {
                     echo '<a href="?page=options-fau-cris&tab=sync&action=cris_sync" name="sync-now" id="sync-now" class="button button-secondary" style="margin-bottom: 10px;" ><span class="dashicons dashicons-image-rotate" style="margin: 3px 5px 0 0;"></span>' . __('Jetzt synchronisieren', 'fau-cris') . '</a>';
                 }
                 submit_button();
@@ -251,7 +266,8 @@ class FAU_CRIS {
     /**
      * Register and add settings
      */
-    public static function admin_init() {
+    public static function admin_init()
+    {
 
         register_setting(
             'fau_cris_options', // Option group
@@ -261,81 +277,81 @@ class FAU_CRIS {
 
         if (isset($_GET))
             $tab = self::current_tab($_GET);
-        switch($tab) {
+        switch ($tab) {
             case 'general' :
             default:
                 // Form Settings 1
                 add_settings_section(
-                        'cris_section', // ID
-                        '', // Title
-                        '__return_false', // Callback
-                        'fau_cris_options' // Page
+                    'cris_section', // ID
+                    '', // Title
+                    '__return_false', // Callback
+                    'fau_cris_options' // Page
                 );
                 add_settings_field(
-                        'cris_org_nr', // ID
-                        __('CRIS-OrgNr.', 'fau-cris'), // Title
-                        array(__CLASS__, 'cris_textbox_callback'), // Callback
-                        'fau_cris_options', // Page
-                        'cris_section', // Section
-                        array(
-                    'name' => 'cris_org_nr',
-                    'description' => __('Sie können auch mehrere Organisationsnummern &ndash; durch Komma getrennt &ndash; eingeben.', 'fau-cris')
-                        )
+                    'cris_org_nr', // ID
+                    __('CRIS-OrgNr.', 'fau-cris'), // Title
+                    array(__CLASS__, 'cris_textbox_callback'), // Callback
+                    'fau_cris_options', // Page
+                    'cris_section', // Section
+                    array(
+                        'name' => 'cris_org_nr',
+                        'description' => __('Sie können auch mehrere Organisationsnummern &ndash; durch Komma getrennt &ndash; eingeben.', 'fau-cris')
+                    )
                 );
                 break;
             case 'layout' :
                 add_settings_section(
-                        'cris_publications_section', // ID
-                        __('Publikationen', 'fau-cris'), // Title
-                        '__return_false', // Callback
-                        'fau_cris_options' // Page
+                    'cris_publications_section', // ID
+                    __('Publikationen', 'fau-cris'), // Title
+                    '__return_false', // Callback
+                    'fau_cris_options' // Page
                 );
                 add_settings_field(
-                        'cris_pub_order', __('Reihenfolge der Publikationen', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_publications_section', array(
-                    'name' => 'cris_pub_order',
-                    'description' => __('Wenn Sie die Publikationsliste nach Publikationstypen geordnet ausgeben, können Sie hier angeben, in welcher Reihenfolge die Typen aufgelistet werden. Eine Liste aller Typen finden Sie im Hilfemenü unter "Shortcode Publikationen". Ein Eintrag pro Zeile. ', 'fau-cris')
-                        )
+                    'cris_pub_order', __('Reihenfolge der Publikationen', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_publications_section', array(
+                        'name' => 'cris_pub_order',
+                        'description' => __('Wenn Sie die Publikationsliste nach Publikationstypen geordnet ausgeben, können Sie hier angeben, in welcher Reihenfolge die Typen aufgelistet werden. Eine Liste aller Typen finden Sie im Hilfemenü unter "Shortcode Publikationen". Ein Eintrag pro Zeile. ', 'fau-cris')
+                    )
                 );
                 add_settings_field(
-                        'cris_pub_subtypes_order', __('Reihenfolge der Publikationen-Subtypen unter "Andere"', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_publications_section', array(
-                    'name' => 'cris_pub_subtypes_order',
-                    //'description' => __('Wenn Sie die Publikationsliste nach Publikationstypen geordnet ausgeben, können Sie hier angeben, in welcher Reihenfolge die Typen aufgelistet werden. Eine Liste aller Typen finden Sie im Hilfemenü unter "Shortcode Publikationen". Ein Eintrag pro Zeile. ', 'fau-cris')
-                        )
+                    'cris_pub_subtypes_order', __('Reihenfolge der Publikationen-Subtypen unter "Andere"', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_publications_section', array(
+                        'name' => 'cris_pub_subtypes_order',
+                        //'description' => __('Wenn Sie die Publikationsliste nach Publikationstypen geordnet ausgeben, können Sie hier angeben, in welcher Reihenfolge die Typen aufgelistet werden. Eine Liste aller Typen finden Sie im Hilfemenü unter "Shortcode Publikationen". Ein Eintrag pro Zeile. ', 'fau-cris')
+                    )
                 );
                 add_settings_field(
-                        'cris_doi', __('DOI-Link', 'fau-cris'), array(__CLASS__, 'cris_check_callback'), 'fau_cris_options', 'cris_publications_section', array(
-                    'name' => 'cris_doi',
-                    'description' => __('Soll auch im APA- und MLA-Zitierstil (wenn vorhanden) für jede Publikation ein DOI-Link angezeigt werden?', 'fau-cris')
-                        )
+                    'cris_doi', __('DOI-Link', 'fau-cris'), array(__CLASS__, 'cris_check_callback'), 'fau_cris_options', 'cris_publications_section', array(
+                        'name' => 'cris_doi',
+                        'description' => __('Soll auch im APA- und MLA-Zitierstil (wenn vorhanden) für jede Publikation ein DOI-Link angezeigt werden?', 'fau-cris')
+                    )
                 );
                 add_settings_field(
-                        'cris_url', __('URL', 'fau-cris'), array(__CLASS__, 'cris_check_callback'), 'fau_cris_options', 'cris_publications_section', array(
-                    'name' => 'cris_url',
-                    'description' => __('Soll auch im APA- und MLA-Zitierstil (wenn vorhanden) ein Link zu einer Website angezeigt werden?', 'fau-cris')
-                        )
+                    'cris_url', __('URL', 'fau-cris'), array(__CLASS__, 'cris_check_callback'), 'fau_cris_options', 'cris_publications_section', array(
+                        'name' => 'cris_url',
+                        'description' => __('Soll auch im APA- und MLA-Zitierstil (wenn vorhanden) ein Link zu einer Website angezeigt werden?', 'fau-cris')
+                    )
                 );
                 add_settings_field(
-                        'cris_oa', __('OA-Icon', 'fau-cris'), array(__CLASS__, 'cris_check_callback'), 'fau_cris_options', 'cris_publications_section', array(
-                    'name' => 'cris_oa',
-                    'description' => __('Sollen Publikationen auch im APA- und MLA-Zitierstil als Open Access gekennzeichnet werden?', 'fau-cris')
-                        )
+                    'cris_oa', __('OA-Icon', 'fau-cris'), array(__CLASS__, 'cris_check_callback'), 'fau_cris_options', 'cris_publications_section', array(
+                        'name' => 'cris_oa',
+                        'description' => __('Sollen Publikationen auch im APA- und MLA-Zitierstil als Open Access gekennzeichnet werden?', 'fau-cris')
+                    )
                 );
                 add_settings_field(
-                        'cris_bibtex', __('BibTeX-Link', 'fau-cris'), array(__CLASS__, 'cris_check_callback'), 'fau_cris_options', 'cris_publications_section', array(
-                    'name' => 'cris_bibtex',
-                    'description' => __('Soll für jede Publikation ein Link zum BibTeX-Export angezeigt werden?', 'fau-cris')
-                        )
+                    'cris_bibtex', __('BibTeX-Link', 'fau-cris'), array(__CLASS__, 'cris_check_callback'), 'fau_cris_options', 'cris_publications_section', array(
+                        'name' => 'cris_bibtex',
+                        'description' => __('Soll für jede Publikation ein Link zum BibTeX-Export angezeigt werden?', 'fau-cris')
+                    )
                 );
                 add_settings_field(
                     'cris_univis', __('Autoren verlinken', 'fau-cris'), array(__CLASS__, 'cris_radio_callback'), 'fau_cris_options', 'cris_publications_section', array(
-                    'name' => 'cris_univis',
-                    'options' => array(
-                        'person' => __('Autoren mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
-                        'cris' => __('Autoren mit ihrer Profilseite auf cris.fau.de verlinken','fau-cris'),
-                        'none' => __('keinen Link setzen', 'fau-cris'))
+                        'name' => 'cris_univis',
+                        'options' => array(
+                            'person' => __('Autoren mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
+                            'cris' => __('Autoren mit ihrer Profilseite auf cris.fau.de verlinken', 'fau-cris'),
+                            'none' => __('keinen Link setzen', 'fau-cris'))
                     )
                 );
-                add_settings_field (
+                add_settings_field(
                     'cris_name_order_plugin',
                     __('Namen im FAU-Person-Plugin', 'fau-cris'),
                     array(__CLASS__, 'cris_select_callback'),
@@ -346,117 +362,117 @@ class FAU_CRIS {
                         'description' => __('In welcher Reihenfolge sind die Namen im FAU-Person-Plugin angelegt?', 'fau-cris'),
                         'options' => array(
                             'firstname-lastname' => __('Vorname Nachname', 'fau-cris'),
-                            'lastname-firstname' => __('Nachname, Vorname','fau-cris'))
-                        )
-                    );
+                            'lastname-firstname' => __('Nachname, Vorname', 'fau-cris'))
+                    )
+                );
                 add_settings_section(
-                        'cris_awards_section', // ID
-                        __('Auszeichnungen', 'fau-cris'), // Title
-                        '__return_false', // Callback
-                        'fau_cris_options' // Page
+                    'cris_awards_section', // ID
+                    __('Auszeichnungen', 'fau-cris'), // Title
+                    '__return_false', // Callback
+                    'fau_cris_options' // Page
                 );
                 add_settings_field(
-                        'cris_award_order', __('Reihenfolge der Auszeichnungen', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_awards_section', array(
-                    'name' => 'cris_award_order',
-                    'description' => __('Siehe Reihenfolge der Publikationen. Nur eben für die Auszeichnungen.', 'fau-cris')
-                        )
+                    'cris_award_order', __('Reihenfolge der Auszeichnungen', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_awards_section', array(
+                        'name' => 'cris_award_order',
+                        'description' => __('Siehe Reihenfolge der Publikationen. Nur eben für die Auszeichnungen.', 'fau-cris')
+                    )
                 );
                 add_settings_field(
                     'cris_award_link', __('Preisträger verlinken', 'fau-cris'), array(__CLASS__, 'cris_radio_callback'), 'fau_cris_options', 'cris_awards_section', array(
-                    'name' => 'cris_award_link',
-                    'options' => array(
-                        'person' => __('Preisträger mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
-                        'cris' => __('Preisträger mit ihrer Profilseite auf cris.fau.de verlinken','fau-cris'),
-                        'none' => __('keinen Link setzen', 'fau-cris'))
+                        'name' => 'cris_award_link',
+                        'options' => array(
+                            'person' => __('Preisträger mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
+                            'cris' => __('Preisträger mit ihrer Profilseite auf cris.fau.de verlinken', 'fau-cris'),
+                            'none' => __('keinen Link setzen', 'fau-cris'))
                     )
                 );
                 add_settings_section(
-                        'cris_fields_section', // ID
-                        __('Forschungsbereiche', 'fau-cris'), // Title
-                        '__return_false', // Callback
-                        'fau_cris_options' // Page
+                    'cris_fields_section', // ID
+                    __('Forschungsbereiche', 'fau-cris'), // Title
+                    '__return_false', // Callback
+                    'fau_cris_options' // Page
                 );
                 add_settings_field(
-                        'cris_fields_num_pub', // ID
-                        __('Anzahl Publikationen', 'fau-cris'), // Title
-                        array(__CLASS__, 'cris_textbox_callback'), // Callback
-                        'fau_cris_options', // Page
-                        'cris_fields_section', // Section
-                        array(
-                            'name' => 'cris_fields_num_pub',
-                            'description' => __('Maximale Anzahl der Publikationen, die in der Detailansicht eines Forschungsbereichs angezeigt werden.', 'fau-cris')
-                        )
+                    'cris_fields_num_pub', // ID
+                    __('Anzahl Publikationen', 'fau-cris'), // Title
+                    array(__CLASS__, 'cris_textbox_callback'), // Callback
+                    'fau_cris_options', // Page
+                    'cris_fields_section', // Section
+                    array(
+                        'name' => 'cris_fields_num_pub',
+                        'description' => __('Maximale Anzahl der Publikationen, die in der Detailansicht eines Forschungsbereichs angezeigt werden.', 'fau-cris')
+                    )
                 );
-	            add_settings_field(
-		            'cris_field_link', __('Kontaktpersonen verlinken', 'fau-cris'), array(__CLASS__, 'cris_radio_callback'), 'fau_cris_options', 'cris_fields_section', array(
-			            'name' => 'cris_field_link',
-			            'options' => array(
-				            'person' => __('Kontaktpersonen mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
-				            'cris' => __('Kontaktpersonen mit ihrer Profilseite auf cris.fau.de verlinken','fau-cris'),
-				            'none' => __('keinen Link setzen', 'fau-cris'))
-		            )
-	            );
-	            add_settings_section(
-                        'cris_projects_section', // ID
-                        __('Forschungsprojekte', 'fau-cris'), // Title
-                        '__return_false', // Callback
-                        'fau_cris_options' // Page
+                add_settings_field(
+                    'cris_field_link', __('Kontaktpersonen verlinken', 'fau-cris'), array(__CLASS__, 'cris_radio_callback'), 'fau_cris_options', 'cris_fields_section', array(
+                        'name' => 'cris_field_link',
+                        'options' => array(
+                            'person' => __('Kontaktpersonen mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
+                            'cris' => __('Kontaktpersonen mit ihrer Profilseite auf cris.fau.de verlinken', 'fau-cris'),
+                            'none' => __('keinen Link setzen', 'fau-cris'))
+                    )
+                );
+                add_settings_section(
+                    'cris_projects_section', // ID
+                    __('Forschungsprojekte', 'fau-cris'), // Title
+                    '__return_false', // Callback
+                    'fau_cris_options' // Page
                 );
                 add_settings_field(
                     'cris_project_order', __('Reihenfolge der Forschungsprojekte', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_projects_section', array(
-                    'name' => 'cris_project_order',
-                    'description' => __('Siehe Reihenfolge der Publikationen. Nur eben für die Forschungsprojekte.', 'fau-cris')
-                        )
+                        'name' => 'cris_project_order',
+                        'description' => __('Siehe Reihenfolge der Publikationen. Nur eben für die Forschungsprojekte.', 'fau-cris')
+                    )
                 );
                 add_settings_field(
                     'cris_project_link', __('Projektbeteiligte verlinken', 'fau-cris'), array(__CLASS__, 'cris_radio_callback'), 'fau_cris_options', 'cris_projects_section', array(
-                    'name' => 'cris_project_link',
-                    'options' => array(
-                        'person' => __('Projektleiter und -beteiligte mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
-                        'cris' => __('Projektleiter und -beteiligte mit ihrer Profilseite auf cris.fau.de verlinken','fau-cris'),
-                        'none' => __('keinen Link setzen', 'fau-cris'))
+                        'name' => 'cris_project_link',
+                        'options' => array(
+                            'person' => __('Projektleiter und -beteiligte mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
+                            'cris' => __('Projektleiter und -beteiligte mit ihrer Profilseite auf cris.fau.de verlinken', 'fau-cris'),
+                            'none' => __('keinen Link setzen', 'fau-cris'))
                     )
                 );
                 add_settings_section(
-                        'cris_patents_section', // ID
-                        __('Patente', 'fau-cris'), // Title
-                        '__return_false', // Callback
-                        'fau_cris_options' // Page
+                    'cris_patents_section', // ID
+                    __('Patente', 'fau-cris'), // Title
+                    '__return_false', // Callback
+                    'fau_cris_options' // Page
                 );
                 add_settings_field(
-                        'cris_patent_order', __('Reihenfolge der Patente', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_patents_section', array(
-                    'name' => 'cris_patent_order',
-                    'description' => __('Siehe Reihenfolge der Publikationen. Nur eben für die Patente.', 'fau-cris')
-                        )
+                    'cris_patent_order', __('Reihenfolge der Patente', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_patents_section', array(
+                        'name' => 'cris_patent_order',
+                        'description' => __('Siehe Reihenfolge der Publikationen. Nur eben für die Patente.', 'fau-cris')
+                    )
                 );
                 add_settings_field(
                     'cris_patent_link', __('Patentinhaber verlinken', 'fau-cris'), array(__CLASS__, 'cris_radio_callback'), 'fau_cris_options', 'cris_patents_section', array(
-                    'name' => 'cris_patent_link',
-                    'options' => array(
-                        'person' => __('Patentinhaber mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
-                        'cris' => __('Patentinhaber mit ihrer Profilseite auf cris.fau.de verlinken','fau-cris'),
-                        'none' => __('keinen Link setzen', 'fau-cris'))
+                        'name' => 'cris_patent_link',
+                        'options' => array(
+                            'person' => __('Patentinhaber mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
+                            'cris' => __('Patentinhaber mit ihrer Profilseite auf cris.fau.de verlinken', 'fau-cris'),
+                            'none' => __('keinen Link setzen', 'fau-cris'))
                     )
                 );
                 add_settings_section(
-                        'cris_activities_section', // ID
-                        __('Aktivitäten', 'fau-cris'), // Title
-                        '__return_false', // Callback
-                        'fau_cris_options' // Page
+                    'cris_activities_section', // ID
+                    __('Aktivitäten', 'fau-cris'), // Title
+                    '__return_false', // Callback
+                    'fau_cris_options' // Page
                 );
                 add_settings_field(
-                        'cris_activities_order', __('Reihenfolge der Aktivitäten', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_activities_section', array(
-                    'name' => 'cris_activities_order',
-                    'description' => __('Siehe Reihenfolge der Publikationen. Nur eben für die Aktivitäten.', 'fau-cris')
-                        )
+                    'cris_activities_order', __('Reihenfolge der Aktivitäten', 'fau-cris'), array(__CLASS__, 'cris_textarea_callback'), 'fau_cris_options', 'cris_activities_section', array(
+                        'name' => 'cris_activities_order',
+                        'description' => __('Siehe Reihenfolge der Publikationen. Nur eben für die Aktivitäten.', 'fau-cris')
+                    )
                 );
                 add_settings_field(
                     'cris_activities_link', __('Personen verlinken', 'fau-cris'), array(__CLASS__, 'cris_radio_callback'), 'fau_cris_options', 'cris_activities_section', array(
-                    'name' => 'cris_activities_link',
-                    'options' => array(
-                        'person' => __('Personen mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
-                        'cris' => __('Personen mit ihrer Profilseite auf cris.fau.de verlinken','fau-cris'),
-                        'none' => __('keinen Link setzen', 'fau-cris'))
+                        'name' => 'cris_activities_link',
+                        'options' => array(
+                            'person' => __('Personen mit ihrer Personen-Detailansicht im FAU-Person-Plugin verlinken', 'fau-cris'),
+                            'cris' => __('Personen mit ihrer Profilseite auf cris.fau.de verlinken', 'fau-cris'),
+                            'none' => __('keinen Link setzen', 'fau-cris'))
                     )
                 );
                 break;
@@ -468,31 +484,31 @@ class FAU_CRIS {
                     'fau_cris_options' // Page
                 );
                 add_settings_field(
-                        'cris_sync_check',
-                        __('Automatische Synchronisierung', 'fau-cris'),
-                        array(__CLASS__, 'cris_check_callback'),
-                        'fau_cris_options',
-                        'cris_sync_section',
-                        array(
-                            'name' => 'cris_sync_check',
-                            'description' => __('Sollen für neue Projekte und Forschungsbereiche automatisch Seiten und Menüeinträge generiert werden?', 'fau-cris')
-                        )
-                    );
+                    'cris_sync_check',
+                    __('Automatische Synchronisierung', 'fau-cris'),
+                    array(__CLASS__, 'cris_check_callback'),
+                    'fau_cris_options',
+                    'cris_sync_section',
+                    array(
+                        'name' => 'cris_sync_check',
+                        'description' => __('Sollen für neue Projekte und Forschungsbereiche automatisch Seiten und Menüeinträge generiert werden?', 'fau-cris')
+                    )
+                );
                 add_settings_field(
-                        'cris_sync_shortcode_format',
-                        __('Shortcode-Format', 'fau-cris'),
-                        array(__CLASS__, 'cris_check_callback'),
-                        'fau_cris_options',
-                        'cris_sync_section',
-                        array(
-                            'name' => 'cris_sync_shortcode_format',
-                            'description' => __('Soll für die Shortcodes auf den automatisch erstellten Seiten das konfigurierbare Format "[cris-custom]" verwendet werden?', 'fau-cris'),
-                    'options' => array(
-                        'research' => __('Custom-Shortcode für Seite Forschung', 'fau-cris'),
-                        'fields' => __('Custom-Shortcode für Forschungsbereiche','fau-cris'),
-                        'projects' => __('Custom-Shortcode für Forschungsprojekte', 'fau-cris'))
-                            )
-                    );
+                    'cris_sync_shortcode_format',
+                    __('Shortcode-Format', 'fau-cris'),
+                    array(__CLASS__, 'cris_check_callback'),
+                    'fau_cris_options',
+                    'cris_sync_section',
+                    array(
+                        'name' => 'cris_sync_shortcode_format',
+                        'description' => __('Soll für die Shortcodes auf den automatisch erstellten Seiten das konfigurierbare Format "[cris-custom]" verwendet werden?', 'fau-cris'),
+                        'options' => array(
+                            'research' => __('Custom-Shortcode für Seite Forschung', 'fau-cris'),
+                            'fields' => __('Custom-Shortcode für Forschungsbereiche', 'fau-cris'),
+                            'projects' => __('Custom-Shortcode für Forschungsprojekte', 'fau-cris'))
+                    )
+                );
                 break;
         }
     }
@@ -500,7 +516,8 @@ class FAU_CRIS {
     /**
      * Sanitize each setting field as needed
      */
-    public static function sanitize() {
+    public static function sanitize()
+    {
 
         $new_input = self::get_options();
         $default_options = self::default_options();
@@ -523,12 +540,12 @@ class FAU_CRIS {
                 $new_input['cris_doi'] = isset($_POST[self::option_name]['cris_doi']) ? 1 : 0;
                 $new_input['cris_oa'] = isset($_POST[self::option_name]['cris_oa']) ? 1 : 0;
                 $new_input['cris_name_order_plugin'] = (isset($_POST[self::option_name]['cris_name_order_plugin'])
-                        && $_POST[self::option_name]['cris_name_order_plugin'] == 'lastname-firstname') ? 'lastname-firstname' : 'firstname-lastname';
+                    && $_POST[self::option_name]['cris_name_order_plugin'] == 'lastname-firstname') ? 'lastname-firstname' : 'firstname-lastname';
                 $new_input['cris_award_order'] = isset($_POST[self::option_name]['cris_award_order']) ? explode("\n", str_replace("\r", "", $_POST[self::option_name]['cris_award_order'])) : $default_options['cris_award_order'];
                 $new_input['cris_award_link'] = in_array($_POST[self::option_name]['cris_award_link'], array('person', 'cris', 'none')) ? $_POST[self::option_name]['cris_award_link'] : $default_options['cris_award_link'];
                 $new_input['cris_fields_num_pub'] = isset($_POST[self::option_name]['cris_fields_num_pub']) ? sanitize_text_field($_POST[self::option_name]['cris_fields_num_pub']) : 0;
-	            $new_input['cris_field_link'] = in_array($_POST[self::option_name]['cris_field_link'], array('person', 'cris', 'none')) ? $_POST[self::option_name]['cris_field_link'] : $default_options['cris_field_link'];
-	            $new_input['cris_project_order'] = isset($_POST[self::option_name]['cris_project_order']) ? explode("\n", str_replace("\r", "", $_POST[self::option_name]['cris_project_order'])) : $default_options['cris_project_order'];
+                $new_input['cris_field_link'] = in_array($_POST[self::option_name]['cris_field_link'], array('person', 'cris', 'none')) ? $_POST[self::option_name]['cris_field_link'] : $default_options['cris_field_link'];
+                $new_input['cris_project_order'] = isset($_POST[self::option_name]['cris_project_order']) ? explode("\n", str_replace("\r", "", $_POST[self::option_name]['cris_project_order'])) : $default_options['cris_project_order'];
                 $new_input['cris_project_link'] = in_array($_POST[self::option_name]['cris_project_link'], array('person', 'cris', 'none')) ? $_POST[self::option_name]['cris_project_link'] : $default_options['cris_project_link'];
                 $new_input['cris_patent_order'] = isset($_POST[self::option_name]['cris_patent_order']) ? explode("\n", str_replace("\r", "", $_POST[self::option_name]['cris_patent_order'])) : $default_options['cris_patent_order'];
                 $new_input['cris_patent_link'] = in_array($_POST[self::option_name]['cris_patent_link'], array('person', 'cris', 'none')) ? $_POST[self::option_name]['cris_patent_link'] : $default_options['cris_patent_link'];
@@ -537,7 +554,7 @@ class FAU_CRIS {
                 break;
             case 'sync':
                 $new_input['cris_sync_check'] = isset($_POST[self::option_name]['cris_sync_check']) ? 1 : 0;
-                if(is_array($_POST[self::option_name]['cris_sync_shortcode_format'])) {
+                if (is_array($_POST[self::option_name]['cris_sync_shortcode_format'])) {
                     /*foreach ($_POST[self::option_name]['cris_sync_shortcode_format'] as $_check){
                         foreach ($_check as $_k => $_v) {
                             $new_input['cris_sync_shortcode_format'][$_k] = $_v;
@@ -554,7 +571,8 @@ class FAU_CRIS {
      * Get the settings option array and print its values
      */
     // Checkbox
-    public static function cris_check_callback($args) {
+    public static function cris_check_callback($args)
+    {
         $options = self::get_options();
         if (array_key_exists('name', $args))
             $name = esc_attr($args['name']);
@@ -570,19 +588,20 @@ class FAU_CRIS {
             foreach ($checks as $_k => $_v) { ?>
                 <label>
                     <input name="<?php printf('%s[' . $name . '][' . $_k . ']', self::option_name); ?>"
-                        type='checkbox'
-                        value='1'
+                           type='checkbox'
+                           value='1'
                         <?php
                         if (array_key_exists($name, $options) && array_key_exists($_k, $options[$name])) {
-                            print checked($options[$name][ $_k], 1, false);
+                            print checked($options[$name][$_k], 1, false);
                         }
                         ?>
                     >
                     <?php print $_v; ?>
-                </label><br />
+                </label><br/>
             <?php }
         } else { ?>
-            <label><input name="<?php printf('%s[' . $name . ']', self::option_name); ?>" type='checkbox' value='1'         <?php
+            <label><input name="<?php printf('%s[' . $name . ']', self::option_name); ?>" type='checkbox'
+                          value='1' <?php
             if (array_key_exists($name, $options)) {
                 print checked($options[$name], 1, false);
             }
@@ -594,7 +613,8 @@ class FAU_CRIS {
     }
 
     // Radio Button
-    public static function cris_radio_callback($args) {
+    public static function cris_radio_callback($args)
+    {
         $options = self::get_options();
         if (array_key_exists('name', $args))
             $name = esc_attr($args['name']);
@@ -605,15 +625,15 @@ class FAU_CRIS {
         foreach ($radios as $_k => $_v) { ?>
             <label>
                 <input name="<?php printf('%s[' . $name . ']', self::option_name); ?>"
-                   type='radio'
-                   value='<?php print $_k; ?>'
-                   <?php
+                       type='radio'
+                       value='<?php print $_k; ?>'
+                    <?php
                     if (array_key_exists($name, $options)) {
-                       checked($options[$name], $_k);
+                        checked($options[$name], $_k);
                     } ?>
                 >
                 <?php print $_v; ?>
-            </label><br />
+            </label><br/>
         <?php }
 
         if (isset($description)) { ?>
@@ -622,7 +642,8 @@ class FAU_CRIS {
     }
 
     //Select
-    public static function cris_select_callback($args){
+    public static function cris_select_callback($args)
+    {
         $options = self::get_options();
         if (array_key_exists('name', $args))
             $name = esc_attr($args['name']);
@@ -631,12 +652,14 @@ class FAU_CRIS {
         if (array_key_exists('options', $args))
             $limit = $args['options']; ?>
         <select name="<?php printf('%s[' . $name . ']', self::option_name); ?>">
-        <?php foreach ($limit as $_k => $_v) { ?>
-            <option value='<?php print $_k; ?>'
-                <?php if (array_key_exists($name, $options)) { selected($options[$name], $_k); } ?>>
+            <?php foreach ($limit as $_k => $_v) { ?>
+                <option value='<?php print $_k; ?>'
+                    <?php if (array_key_exists($name, $options)) {
+                        selected($options[$name], $_k);
+                    } ?>>
                     <?php print $_v; ?>
-            </option>
-        <?php } ?>
+                </option>
+            <?php } ?>
         </select>
         <?php
         if (isset($description)) { ?>
@@ -645,7 +668,8 @@ class FAU_CRIS {
     }
 
     // Textbox
-    public static function cris_textbox_callback($args) {
+    public static function cris_textbox_callback($args)
+    {
         $options = self::get_options();
         if (array_key_exists('name', $args))
             $name = esc_attr($args['name']);
@@ -656,15 +680,16 @@ class FAU_CRIS {
         if (array_key_exists($name, $options)) {
             echo $options[$name];
         }
-        ?>" ><br />
-               <?php if (isset($description)) { ?>
-            <span class="description"><?php echo $description; ?></span>
-            <?php
-        }
+        ?>"><br/>
+        <?php if (isset($description)) { ?>
+        <span class="description"><?php echo $description; ?></span>
+        <?php
+    }
     }
 
     // Textarea
-    public static function cris_textarea_callback($args) {
+    public static function cris_textarea_callback($args)
+    {
         $options = self::get_options();
         $default_options = self::default_options();
         if (array_key_exists('name', $args))
@@ -674,23 +699,24 @@ class FAU_CRIS {
         ?>
         <textarea name="<?php printf('%s[' . $name . ']', self::option_name); ?>" cols="30" rows="8"><?php
             if (array_key_exists($name, $options)) {
-                if (is_array($options[$name]) && count($options[$name])>0 && $options[$name][0] !='') {
+                if (is_array($options[$name]) && count($options[$name]) > 0 && $options[$name][0] != '') {
                     echo implode("\n", $options[$name]);
                 } else {
                     echo implode("\n", $default_options[$name]);
                 }
             }
-            ?></textarea><br />
+            ?></textarea><br/>
         <?php if (isset($description)) { ?>
-            <span class="description"><?php echo $description; ?></span>
-            <?php
-        }
+        <span class="description"><?php echo $description; ?></span>
+        <?php
+    }
     }
 
     /**
      * Add Shortcodes
      */
-    public static function cris_shortcode($atts, $content = null, $tag) {
+    public static function cris_shortcode($atts, $content = null, $tag)
+    {
         $parameter = self::cris_shortcode_parameter($atts, $content = null, $tag);
         global $post;
         $page_lang = Tools::getPageLanguage($post->ID);
@@ -709,7 +735,7 @@ class FAU_CRIS {
             if ($parameter['equipment'] != '') {
                 return $liste->singleEquipment($parameter['hide'], $parameter['quotation']);
             }
-            if ($parameter['limit'] != '' ) {
+            if ($parameter['limit'] != '') {
                 return $liste->equiListe($parameter);
             }
             if (strpos($parameter['order1'], 'type') !== false) {
@@ -744,7 +770,7 @@ class FAU_CRIS {
             if ($parameter['activity'] != '') {
                 return $liste->singleActivity($parameter['hide']);
             }
-            if ($parameter['limit'] != '' ) {
+            if ($parameter['limit'] != '') {
                 return $liste->actiListe($parameter);
             }
             if (strpos($parameter['order1'], 'type') !== false) {
@@ -829,7 +855,8 @@ class FAU_CRIS {
         return '';
     }
 
-    public static function cris_custom_shortcode($atts, $content = null, $tag) {
+    public static function cris_custom_shortcode($atts, $content = null, $tag)
+    {
         $parameter = self::cris_shortcode_parameter($atts, $content, $tag);
         global $post;
         $page_lang = Tools::getPageLanguage($post->ID);
@@ -840,39 +867,39 @@ class FAU_CRIS {
             $liste = new Standardisierungen($parameter['entity'], $parameter['entity_id'], $page_lang, $parameter['display_language']);
             return $liste->standardizationListe($parameter, $content);
         } elseif ($parameter['show'] == 'organisation') {
-        // Forschung
+            // Forschung
             require_once('class_Organisation.php');
             $liste = new Organisation($parameter['entity'], $parameter['entity_id'], $page_lang, $parameter['display_language']);
             return $liste->customOrganisation($content, $parameter['image_align']);
         } elseif ($parameter['show'] == 'equipment') {
-        // Forschungsinfrastruktur
-	        require_once('class_Equipment.php');
-	        $liste = new Equipment($parameter['entity'], $parameter['entity_id'], $page_lang, $parameter['display_language']);
-	        return $liste->customEquipment($content, $parameter);
+            // Forschungsinfrastruktur
+            require_once('class_Equipment.php');
+            $liste = new Equipment($parameter['entity'], $parameter['entity_id'], $page_lang, $parameter['display_language']);
+            return $liste->customEquipment($content, $parameter);
         } elseif ($parameter['show'] == 'fields') {
-        // Forschungsbereiche
+            // Forschungsbereiche
             require_once('class_Forschungsbereiche.php');
             $liste = new Forschungsbereiche($parameter['entity'], $parameter['entity_id'], $page_lang, $parameter['display_language']);
             if ($parameter['field'] != '') {
                 return $liste->customField($content, $parameter);
             }
         } elseif (isset($parameter['show']) && $parameter['show'] == 'projects') {
-        // Projekte
+            // Projekte
             require_once('class_Projekte.php');
             $liste = new Projekte($parameter['entity'], $parameter['entity_id'], $page_lang, $parameter['display_language']);
             if ($parameter['project'] != '') {
                 return $liste->customProj($content, $parameter);
             }
         } elseif ($parameter['show'] == 'awards') {
-        // Auszeichnungen
-	        require_once('class_Auszeichnungen.php');
-	        $liste = new Auszeichnungen($parameter['entity'], $parameter['entity_id'], $page_lang, $parameter['display_language']);
-	        if ($parameter['award'] != '') {
-		        return $liste->customAward( $content, $parameter );
-	        }
-	        return $liste->awardsListe($parameter, $content);
+            // Auszeichnungen
+            require_once('class_Auszeichnungen.php');
+            $liste = new Auszeichnungen($parameter['entity'], $parameter['entity_id'], $page_lang, $parameter['display_language']);
+            if ($parameter['award'] != '') {
+                return $liste->customAward($content, $parameter);
+            }
+            return $liste->awardsListe($parameter, $content);
         } elseif ($parameter['show'] == 'publications') {
-        // Publikationen
+            // Publikationen
             require_once('class_Publikationen.php');
             $liste = new Publikationen($parameter['entity'], $parameter['entity_id'], '', $page_lang);
             if ($parameter['publication'] != '' && $parameter['order1'] == '') {
@@ -889,79 +916,81 @@ class FAU_CRIS {
     }
 
 
-    private static function cris_shortcode_parameter($atts, $content = '', $tag = '') {
+    private static function cris_shortcode_parameter($atts, $content = '', $tag = '')
+    {
         global $post;
         $options = self::get_options();
 
         // Attributes
         extract(shortcode_atts(
-                        array(
-            'show' => 'publications',
-            'orderby' => '',
-            'year' => '',
-            'start' => '',
-            'end' => '',
-            'orgid' => isset($options['cris_org_nr']) ? $options['cris_org_nr'] : '',
-            'persid' => '',
-            'publication' => '',
-            'pubtype' => '',
-            'quotation' => '',
-            'language' => '',
-            'items' => '',
-            'limit' => '',
-            'sortby' => '',
-            'format' => '',
-            'award' => '',
-            'awardnameid' => '',
-            'type' => '',
-            'subtype' => '',
-            'showname' => 1,
-            'showyear' => 1,
-            'showawardname' => 1,
-            'showimage' => 0,
-            'display' => 'list',
-            'project' => '',
-            'hide' => '',
-            'role' => 'all',
-            'status' => '',
-            'patent' => '',
-            'activity' => '',
-            'field' => '',
-            'fau' => '',
-            'equipment' => '',
-            'manufacturer' => '',
-            'constructionyear' => '',
-            'constructionyearstart' => '',
-            'constructionyearend' => '',
-            'location' => '',
-            'peerreviewed' => '',
-            'current' => '',
-            'publications_limit' => (isset($options['cris_fields_num_pub']) && !empty($options['cris_fields_num_pub'])) ? $options['cris_fields_num_pub'] : '5',
-            'name_order_plugin' => (isset($options['cris_name_order_plugin']) && !empty($options['cris_name_order_plugin'])) ? $options['cris_name_order_plugin'] : 'firstname-lastname',
-            'notable' => '',
-            'publications_year' => '',
-            'publications_start' => '',
-            'publications_end' => '',
-            'publications_type' => '',
-            'publications_subtype' => '',
-            'publications_fau' => '',
-            'publications_peerreviewed' => '',
-            'publications_orderby' => '',
-            'publications_notable' => '',
-            'publications_language' => '',
-            'publications_display' => 'list',
-            'publications_format' => 'list',
-            'image_align' => 'right',
-            'accordion_title' => '#name# (#year#)',
-            'accordion_color' => '',
-            'display_language' => Tools::getPageLanguage($post->ID),
-            'organisation' => isset($options['cris_org_nr']) ? $options['cris_org_nr'] : '',
-            'standardization' => ''
-                            ), $atts));
+            array(
+                'show' => 'publications',
+                'orderby' => '',
+                'year' => '',
+                'start' => '',
+                'end' => '',
+                'orgid' => isset($options['cris_org_nr']) ? $options['cris_org_nr'] : '',
+                'persid' => '',
+                'publication' => '',
+                'pubtype' => '',
+                'quotation' => '',
+                'language' => '',
+                'items' => '',
+                'limit' => '',
+                'sortby' => '',
+                'format' => '',
+                'award' => '',
+                'awardnameid' => '',
+                'type' => '',
+                'subtype' => '',
+                'showname' => 1,
+                'showyear' => 1,
+                'showawardname' => 1,
+                'showimage' => 0,
+                'display' => 'list',
+                'project' => '',
+                'hide' => '',
+                'role' => 'all',
+                'status' => '',
+                'patent' => '',
+                'activity' => '',
+                'field' => '',
+                'fau' => '',
+                'equipment' => '',
+                'manufacturer' => '',
+                'constructionyear' => '',
+                'constructionyearstart' => '',
+                'constructionyearend' => '',
+                'location' => '',
+                'peerreviewed' => '',
+                'current' => '',
+                'publications_limit' => (isset($options['cris_fields_num_pub']) && !empty($options['cris_fields_num_pub'])) ? $options['cris_fields_num_pub'] : '5',
+                'name_order_plugin' => (isset($options['cris_name_order_plugin']) && !empty($options['cris_name_order_plugin'])) ? $options['cris_name_order_plugin'] : 'firstname-lastname',
+                'notable' => '',
+                'michi_role' => '',
+                'publications_year' => '',
+                'publications_start' => '',
+                'publications_end' => '',
+                'publications_type' => '',
+                'publications_subtype' => '',
+                'publications_fau' => '',
+                'publications_peerreviewed' => '',
+                'publications_orderby' => '',
+                'publications_notable' => '',
+                'publications_language' => '',
+                'publications_display' => 'list',
+                'publications_format' => 'list',
+                'image_align' => 'right',
+                'accordion_title' => '#name# (#year#)',
+                'accordion_color' => '',
+                'display_language' => Tools::getPageLanguage($post->ID),
+                'organisation' => isset($options['cris_org_nr']) ? $options['cris_org_nr'] : '',
+                'standardization' => ''
+            ), $atts));
 
-	    $sc_param['orderby'] = sanitize_text_field($orderby);
-	    $sc_param['orgid'] = ($orgid != '' ? sanitize_text_field($orgid) : sanitize_text_field($organisation));
-	    $sc_param['persid'] = sanitize_text_field($persid);
+        $sc_param['orderby'] = sanitize_text_field($orderby);
+        $sc_param['orgid'] = ($orgid != '' ? sanitize_text_field($orgid) : sanitize_text_field($organisation));
+        $sc_param['persid'] = sanitize_text_field($persid);
         $sc_param['publication'] = sanitize_text_field($publication);
         $sc_param['award'] = sanitize_text_field($award);
         $sc_param['awardnameid'] = sanitize_text_field($awardnameid);
@@ -986,8 +1015,8 @@ class FAU_CRIS {
         $sc_param['showname'] = sanitize_text_field($showname);
         $sc_param['showyear'] = sanitize_text_field($showyear);
         $sc_param['showawardname'] = sanitize_text_field($showawardname);
-	    $sc_param['showimage'] = $showimage == 1 ? 1 : 0;
-	    $sc_param['display'] = sanitize_text_field($display);
+        $sc_param['showimage'] = $showimage == 1 ? 1 : 0;
+        $sc_param['display'] = sanitize_text_field($display);
         $sc_param['role'] = sanitize_text_field($role);
         $sc_param['fau'] = sanitize_text_field($fau);
         $sc_param['equipment'] = sanitize_text_field($equipment);
@@ -999,6 +1028,7 @@ class FAU_CRIS {
         $sc_param['peerreviewed'] = sanitize_text_field($peerreviewed);
         $sc_param['name_order_plugin'] = sanitize_text_field($name_order_plugin);
         $sc_param['notable'] = $notable == 1 ? 1 : 0;
+        $sc_param['michi_role'] = sanitize_text_field($michi_role);
         $sc_param['publications_language'] = sanitize_text_field($publications_language);
         $sc_param['publications_limit'] = sanitize_text_field($publications_limit);
         $sc_param['publications_display'] = sanitize_text_field($publications_display);
@@ -1013,7 +1043,7 @@ class FAU_CRIS {
         $sc_param['publications_orderby'] = sanitize_text_field($publications_orderby);
         $sc_param['publications_notable'] = $publications_notable == 1 ? 1 : 0;
         $sc_param['standardization'] = sanitize_text_field($standardization);
-        switch($sortby) {
+        switch ($sortby) {
             case 'created':
                 $sc_param['sortby'] = 'updatedon';
                 $sc_param['sortorder'] = SORT_DESC;
@@ -1033,25 +1063,25 @@ class FAU_CRIS {
                 break;
         }
         if (in_array($image_align, ['left', 'right', 'none'])) {
-		    $sc_param['image_align'] = 'align' . sanitize_text_field($image_align);
-		    $sc_param['image_position'] = 'top';
+            $sc_param['image_align'] = 'align' . sanitize_text_field($image_align);
+            $sc_param['image_position'] = 'top';
         } elseif (in_array($image_align, ['bottom', 'top'])) {
-		    $sc_param['image_align'] = 'alignnone';
-		    $sc_param['image_position'] = sanitize_text_field($image_align);
+            $sc_param['image_align'] = 'alignnone';
+            $sc_param['image_position'] = sanitize_text_field($image_align);
         } else {
-		    $sc_param['image_align'] = 'alignright';
-		    $sc_param['image_position'] = 'top';
+            $sc_param['image_align'] = 'alignright';
+            $sc_param['image_position'] = 'top';
         }
         $sc_param['accordion_title'] = sanitize_text_field($accordion_title);
-        $sc_param['accordion_title'] = str_replace(['[', ']'],['&#91;', '&#93;'], $accordion_title);
+        $sc_param['accordion_title'] = str_replace(['[', ']'], ['&#91;', '&#93;'], $accordion_title);
         $sc_param['accordion_color'] = sanitize_text_field($accordion_color);
-	    if (sanitize_text_field($current) == "1" && sanitize_text_field($status) == '') { // Abwärtskompatibilität
+        if (sanitize_text_field($current) == "1" && sanitize_text_field($status) == '') { // Abwärtskompatibilität
             $sc_param['status'] = 'current';
         } else {
             $sc_param['status'] = sanitize_text_field($status);
         }
-	    $sc_param['display_language'] = ($display_language == 'en') ? 'en' : 'de';
-	    $hide = str_replace(' ', '', sanitize_text_field($hide));
+        $sc_param['display_language'] = ($display_language == 'en') ? 'en' : 'de';
+        $hide = str_replace(' ', '', sanitize_text_field($hide));
         $sc_param['hide'] = explode(',', $hide);
         if ($sc_param['publication'] != '') {
             $sc_param['entity'] = 'publication';
@@ -1062,25 +1092,25 @@ class FAU_CRIS {
             $sc_param['entity_id'] = $sc_param['publication'];
         } elseif ($sc_param['standardization'] != '') {
             $sc_param['entity'] = 'standardization';
-	        if (strpos($sc_param['standardization'], ',') !== false) {
-		        $sc_param['standardization'] = str_replace(' ', '', $sc_param['standardization']);
-		        $sc_param['standardization'] = explode(',', $sc_param['standardization']);
-	        }
-	        $sc_param['entity_id'] = $sc_param['standardization'];
+            if (strpos($sc_param['standardization'], ',') !== false) {
+                $sc_param['standardization'] = str_replace(' ', '', $sc_param['standardization']);
+                $sc_param['standardization'] = explode(',', $sc_param['standardization']);
+            }
+            $sc_param['entity_id'] = $sc_param['standardization'];
         } elseif ($sc_param['equipment'] != '') {
             $sc_param['entity'] = 'equipment';
-	        if (strpos($sc_param['equipment'], ',') !== false) {
-		        $sc_param['equipment'] = str_replace(' ', '', $sc_param['equipment']);
-		        $sc_param['equipment'] = explode(',', $sc_param['equipment']);
-	        }
-	        $sc_param['entity_id'] = $sc_param['equipment'];
+            if (strpos($sc_param['equipment'], ',') !== false) {
+                $sc_param['equipment'] = str_replace(' ', '', $sc_param['equipment']);
+                $sc_param['equipment'] = explode(',', $sc_param['equipment']);
+            }
+            $sc_param['entity_id'] = $sc_param['equipment'];
         } elseif ($sc_param['field'] != '') {
             $sc_param['entity'] = 'field';
-	        if (strpos($sc_param['field'], ',') !== false) {
-		        $sc_param['field'] = str_replace(' ', '', $sc_param['field']);
-		        $sc_param['field'] = explode(',', $sc_param['field']);
-	        }
-	        $sc_param['entity_id'] = $sc_param['field'];
+            if (strpos($sc_param['field'], ',') !== false) {
+                $sc_param['field'] = str_replace(' ', '', $sc_param['field']);
+                $sc_param['field'] = explode(',', $sc_param['field']);
+            }
+            $sc_param['entity_id'] = $sc_param['field'];
         } elseif (isset($sc_param['activity']) && $sc_param['activity'] != '') {
             $sc_param['entity'] = 'activity';
             $sc_param['entity_id'] = $sc_param['activity'];
@@ -1141,11 +1171,12 @@ class FAU_CRIS {
         return $sc_param;
     }
 
-    public static function cris_enqueue_styles() {
+    public static function cris_enqueue_styles()
+    {
         global $post;
         $plugin_url = plugin_dir_url(__FILE__);
         if ($post && has_shortcode($post->post_content, 'cris')
-                || $post && has_shortcode($post->post_content, 'cris-custom')) {
+            || $post && has_shortcode($post->post_content, 'cris-custom')) {
             wp_enqueue_style('cris', plugins_url('css/cris.css', __FILE__), array(), self::version);
             wp_enqueue_script('cris', plugins_url('js/cris.js', __FILE__), array('jquery'), self::version);
         }
@@ -1155,7 +1186,8 @@ class FAU_CRIS {
      * WP-Cron
      */
 
-    public static function cris_auto_sync() {
+    public static function cris_auto_sync()
+    {
         include 'class_Sync.php';
         global $post;
         $page_lang = Tools::getPageLanguage($post->ID);
@@ -1163,32 +1195,33 @@ class FAU_CRIS {
         $sync->do_sync(false);
     }
 
-    public static function cris_cron() {
+    public static function cris_cron()
+    {
         $options = get_option('_fau_cris');
         if (isset($options['cris_sync_check'])
-                && $options['cris_sync_check'] != 1) {
-            if (wp_next_scheduled( 'cris_auto_update' ))
+            && $options['cris_sync_check'] != 1) {
+            if (wp_next_scheduled('cris_auto_update'))
                 wp_clear_scheduled_hook('cris_auto_update');
             return;
         }
         if (!isset($options['cris_org_nr'])
-                || $options['cris_org_nr'] == 0
-                || !isset($options['cris_sync_check'])
-                || $options['cris_sync_check'] != 1) {
+            || $options['cris_org_nr'] == 0
+            || !isset($options['cris_sync_check'])
+            || $options['cris_sync_check'] != 1) {
             return;
         }
         //Use wp_next_scheduled to check if the event is already scheduled*/
-        if( !wp_next_scheduled( 'cris_auto_update' )) {
+        if (!wp_next_scheduled('cris_auto_update')) {
             //Schedule the event for right now, then to repeat daily using the hook 'cris_create_cron'
-            wp_schedule_event( strtotime('today 21:00'), 'daily', 'cris_auto_update' );
-            $timestamp = wp_next_scheduled( 'cris_auto_update' );
+            wp_schedule_event(strtotime('today 21:00'), 'daily', 'cris_auto_update');
+            $timestamp = wp_next_scheduled('cris_auto_update');
             if ($timestamp) {
                 $message = __('Einstellungen gespeichert', 'fau-cris')
-                        . '<br />'
-                        . __('Nächste automatische Synchronisierung:', 'fau-cris') . ' '
-                        //. date ('d.m.Y - h:i', $timestamp)
-                        . get_date_from_gmt( date( 'Y-m-d H:i:s', $timestamp ), 'd.m.Y - H:i' );
-                add_settings_error('AutoSyncComplete', 'autosynccomplete', $message , 'updated' );
+                    . '<br />'
+                    . __('Nächste automatische Synchronisierung:', 'fau-cris') . ' '
+                    //. date ('d.m.Y - h:i', $timestamp)
+                    . get_date_from_gmt(date('Y-m-d H:i:s', $timestamp), 'd.m.Y - H:i');
+                add_settings_error('AutoSyncComplete', 'autosynccomplete', $message, 'updated');
                 settings_errors();
             }
         }
@@ -1198,7 +1231,8 @@ class FAU_CRIS {
      * Hilfe-Panel über der Theme-Options-Seite
      */
 
-    public static function cris_help_menu() {
+    public static function cris_help_menu()
+    {
 
         $content_cris = array(
             '<p>' . __('Binden Sie Daten aus aus dem FAU-Forschungsportal <strong>CRIS (Currrent Research Information System)</strong> in Ihren Webauftritt ein. Das Plugin ermöglicht außerdem die Integration mit dem FAU-Person-Plugin.', 'fau-cris') . '</p>',
