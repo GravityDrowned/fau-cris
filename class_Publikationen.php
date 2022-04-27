@@ -1192,7 +1192,11 @@ class CRIS_publications extends CRIS_webservice
 
         if (!is_array($persID))
             $persID = array($persID);
-
+        if ($michi_role == 'supervisor') {
+            foreach ($persID as $_p) {
+                $requests[] = sprintf('getrelated/Person/%s/pers_supcard_publ', $_p);
+            }
+        } else {
         $requests = array();
         if ($notable == 1) {
             foreach ($persID as $_p) {
@@ -1202,6 +1206,7 @@ class CRIS_publications extends CRIS_webservice
             foreach ($persID as $_p) {
                 $requests[] = sprintf('getautorelated/Person/%s/PERS_2_PUBL_1', $_p);
             }
+        }
         }
         return $this->retrieve($requests, $filter);
     }
